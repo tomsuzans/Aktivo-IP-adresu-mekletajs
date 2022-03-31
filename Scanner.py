@@ -233,16 +233,16 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
         try:
             with open('email.txt', 'r') as email:
                 zina = email.read()
-                to = ['toms.uzans@tet.lv']
+                to = ['toms.uzans@tet.lv', 'kristowsky@inbox.lv']
 
                 msg = EmailMessage()
                 msg['Subject'] = 'Atrastas jaunas IP adreses!'
-                msg['From'] = 'skaneris.cron@cpescan-prd.telekom.lv'
+                msg['From'] = 'MyHostScanner@cpescan-prd.telekom.lv'
                 msg['To'] = to
                 msg.set_content(zina)
 
-                with smtplib.SMTP_SSL('smtp.telekom.lv', 25) as smtp:
-                    smtp.send_message(msg)
+            with smtplib.SMTP('smtp.telekom.lv', 25) as smtp:
+                smtp.send_message(msg)
         except Exception:
             print('Error: Nevar nosūtīt e-pastu')
             scanlog.write(logtime + "Error: Nevar nosūtīt e-pastu\n")  # Ieraksta loga error msg

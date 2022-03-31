@@ -12,6 +12,7 @@ iDoit_db_user = os.environ.get('IDOIT_DB_USER')
 iDoit_db_pwd = os.environ.get('IDOIT_DB_PWD')
 send_to = os.environ.get('MANS_EPASTS')
 smtp_server = os.environ.get('SMTP_SERVER')
+send_from = os.environ.get('SEND_FROM')
 
 MyDB = mysql.connector.connect(host='localhost', user=skaneris_db_user, passwd=skaneris_db_pwd, database='skaneris')
 # pieslēgšanās mysql DB
@@ -238,7 +239,7 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
 
                 msg = EmailMessage()
                 msg['Subject'] = 'Atrastas jaunas IP adreses!'
-                msg['From'] = 'MyHostScanner@cpescan-prd.telekom.lv'
+                msg['From'] = send_from
                 msg['To'] = send_to
                 msg.set_content(zina)
 

@@ -10,9 +10,6 @@ skaneris_db_user = os.environ.get('SKANERIS_DB_USER')
 skaneris_db_pwd = os.environ.get('SKANERIS_DB_PWD')
 iDoit_db_user = os.environ.get('IDOIT_DB_USER')
 iDoit_db_pwd = os.environ.get('IDOIT_DB_PWD')
-gmail_db_user = os.environ.get('GMAIL_USER')
-gmail_db_pwd = os.environ.get('GMAIL_PWD')
-
 
 MyDB = mysql.connector.connect(host='localhost', user=skaneris_db_user, passwd=skaneris_db_pwd, database='skaneris')
 # pieslēgšanās mysql DB
@@ -236,16 +233,15 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
         try:
             with open('email.txt', 'r') as email:
                 zina = email.read()
-                to = ['kristowsky@inbox.lv', 'toms.uzans@tet.lv']
+                to = ['toms.uzans@tet.lv']
 
                 msg = EmailMessage()
                 msg['Subject'] = 'Atrastas jaunas IP adreses!'
-                msg['From'] = 'tomsuzans@gmail.com'
+                msg['From'] = 'skaneris.cron@cpescan-prd.telekom.lv'
                 msg['To'] = to
                 msg.set_content(zina)
 
-                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-                    smtp.login(gmail_db_user, gmail_db_pwd)
+                with smtplib.SMTP_SSL('smtp.telekom.lv', 25) as smtp:
                     smtp.send_message(msg)
         except Exception:
             print('Error: Nevar nosūtīt e-pastu')

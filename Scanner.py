@@ -10,6 +10,8 @@ skaneris_db_user = os.environ.get('SKANERIS_DB_USER')
 skaneris_db_pwd = os.environ.get('SKANERIS_DB_PWD')
 iDoit_db_user = os.environ.get('IDOIT_DB_USER')
 iDoit_db_pwd = os.environ.get('IDOIT_DB_PWD')
+send_to = os.environ.get('MANS_EPASTS')
+smtp_server = os.environ.get('SMTP_SERVER')
 
 MyDB = mysql.connector.connect(host='localhost', user=skaneris_db_user, passwd=skaneris_db_pwd, database='skaneris')
 # pieslēgšanās mysql DB
@@ -233,15 +235,14 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
         try:
             with open('email.txt', 'r') as email:
                 zina = email.read()
-                to = ['toms.uzans@tet.lv', 'kristowsky@inbox.lv']
 
                 msg = EmailMessage()
                 msg['Subject'] = 'Atrastas jaunas IP adreses!'
                 msg['From'] = 'MyHostScanner@cpescan-prd.telekom.lv'
-                msg['To'] = to
+                msg['To'] = send_to
                 msg.set_content(zina)
 
-            with smtplib.SMTP('smtp.telekom.lv', 25) as smtp:
+            with smtplib.SMTP(smtp_server, 25) as smtp:
                 smtp.send_message(msg)
         except Exception:
             print('Error: Nevar nosūtīt e-pastu')
@@ -271,4 +272,3 @@ print('Skanēšana pabeigta!')
 scanlog.write(logtime + "Skans pabeigts\n")  # Ieraksta loga procesa beigas
 MyDB.close()  # Aizver DB
 scanlog.close()  # Aizver skana loga failu
-

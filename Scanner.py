@@ -13,15 +13,14 @@ iDoit_db_pwd = os.environ.get('IDOIT_DB_PWD')
 send_to = os.environ.get('MANS_EPASTS')
 smtp_server = os.environ.get('SMTP_SERVER')
 send_from = os.environ.get('SEND_FROM')
-
 MyDB = mysql.connector.connect(host='localhost', user=skaneris_db_user, passwd=skaneris_db_pwd, database='skaneris')
-# pieslēgšanās mysql DB
+# pieslēgšanās skaneris mysql DB
 iDoitDB = mysql.connector.connect(host='192.168.88.203', user=iDoit_db_user, passwd=iDoit_db_pwd, database='iDoit_data')
-# pieslēgšanās mysql DB
-
+# pieslēgšanās iDoit mysql DB
 logtime = datetime.now().strftime('%Y.%m.%d_%H:%M:%S ')  # Laika formāts rakstīšanai logfailā
 
 class Scanner:  # Veic skanesanas darbibu
+
     def nmap():  # metode nmap skana veiksanai
         scanlog.write(logtime + "Uzsāk Nmap skanu\n")  # Ierakstia loga procesa sakumu
         print("\nUzsāk nmap skanu\n")
@@ -53,6 +52,7 @@ class Scanner:  # Veic skanesanas darbibu
         print("\n****************************************************************")
 
 class Converter: # parveido skana rezultatu par lietojamu
+
         def masscan_result_converter(): #parveido masscan rezultatu, atlasot tikai IP un saglabajot faila
             # Ierakstit loga procesa sakumu
             IP_list = []
@@ -69,7 +69,6 @@ class Converter: # parveido skana rezultatu par lietojamu
                     if IP not in IP_list:
                         IP_list.append(IP)  # ieliek IP adresi saraksta
                         ip_to_scan.write(IP)  # ieraksta IP adresi faila
-                print(IP_list)
                 ip_to_scan.close()  # aizver failu
                 scan_result.close()  # aizver failu
             except Exception:
@@ -88,12 +87,14 @@ class Converter: # parveido skana rezultatu par lietojamu
             jaunais_fails = datums + '_' + vecais_fails
             try:
                 os.rename(vecais_fails, jaunais_fails)
+
             except Exception:
                 print('Error: Netika atrasts nmap_scan_result.xml fails')
                 scanlog.write(logtime + "Error: Netika atrasts nmap_scan_result.xml fails\n")  # Ieraksta loga error msg
             print('Beigta nmap skana apstrāde')
 
 class Parser:  # Atlasa IP, portus un hostname no nmap skana rezultata un ieraksta DB
+
     def parse_nmap(file_name):
         scanlog.write(logtime + "Uzsākta nmap rezultāta konvertēšana\n")
         print('Uzsākta nmap rezultāta konvertēšana')
@@ -151,6 +152,7 @@ class Parser:  # Atlasa IP, portus un hostname no nmap skana rezultata un ieraks
             scanlog.write(logtime + "Error: Nevar veikt nmap skana parsēšanu\n")  # Ieraksta loga error msg
 
 class iDoit_data: # Atvelk datus no uzskaites sistemas
+
     def pull():
         try:
             scanlog.write(logtime + "Atvelk datus no iDoit DB\n")  # Ierakstit loga procesa sakumu
@@ -166,20 +168,18 @@ class iDoit_data: # Atvelk datus no uzskaites sistemas
             print('Nevar nokopēt datus no iDoit DB')
             scanlog.write(logtime + "Error: Nevar nokopēt datus no iDoit DB\n")  # Ieraksta loga error msg
 
-
 class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
+
     def select_data():
         scanlog.write(logtime + 'Uzsākta e-pasta sagatavošana\n')
         print('Uzsākta epasta sagatavošana')
         print("\n****************************************************************")
-
         MySQL_select_ip_to_send = """SELECT ip from skaneris.scandb WHERE scandb.first_seen = curdate() """
         MySQL_select_ip_from_scandb = """SELECT ip FROM skaneris.scandb WHERE ip = %s """
         MySQL_select_hn__from_scandb = """SELECT hostname FROM skaneris.scandb WHERE ip = %s """
         MySQL_select_port_from_scandb = """SELECT ports FROM skaneris.scandb WHERE ip = %s """
         MySQL_select_iDoit_hn = """SELECT name FROM skaneris.iDoit_data WHERE ip = %s  """
         MySQL_select_iDoit_bl = """SELECT lietojums FROM skaneris.iDoit_data WHERE ip = %s  """
-
         cursor = MyDB.cursor()
         cursor.execute(MySQL_select_ip_to_send)
         ip_to_send = cursor.fetchall()
@@ -193,36 +193,30 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
                 db_ip = cursor.fetchall()
                 db_ip = ''.join(str(elem) for elem in db_ip)
                 db_ip = db_ip.replace("'", "").replace('(', '').replace(')', '').replace(',', '')
-
                 # Atlasa portus
                 cursor.execute(MySQL_select_port_from_scandb, ip)
                 port = cursor.fetchall()
                 port = ''.join(str(elem) for elem in port)
                 port = port.replace("'", "").replace('(', '').replace(')', '')
-
                 # Atlasa hostname
                 cursor.execute(MySQL_select_hn__from_scandb, ip)
                 hn = cursor.fetchall()
                 hn = ''.join(str(elem) for elem in hn)
                 hn = hn.replace("'", "").replace('(', '').replace(')', '').replace(',', '')
-
                 # Atlasa iDoit servera nosaukmu
                 cursor.execute(MySQL_select_iDoit_hn, ip)
                 iDoit_hn = cursor.fetchall()
                 iDoit_hn = ''.join(str(elem) for elem in iDoit_hn)
                 iDoit_hn = iDoit_hn.replace("'", "").replace('(', '').replace(')', '').replace(',', '')
-
                 # Atlasa iDoit servera biznesa lietojumu
                 cursor.execute(MySQL_select_iDoit_bl, ip)
                 iDoit_bl = cursor.fetchall()
                 iDoit_bl = ''.join(str(elem) for elem in iDoit_bl)
                 iDoit_bl = iDoit_bl.replace("'", "").replace('(', '').replace(')', '').replace(',', '')
-
                 # Sagatavo epasta tekstu txt dokumentā
                 email = open("email.txt", "a")
                 email.write('IP - ' + db_ip + ' / Porti - ' + port + ' / Hostname - ' + hn + ' / iDoit Servera vārds - ' + iDoit_hn + ' / iDoit Biznesa lietojums - ' + iDoit_bl + "\n\n")
                 email.close()
-
             email = open("email.txt", "a")
             email.write("IT risku vadītājs - Toms Užāns \ntoms.uzans@tet.lv\n\n")
             email.close()
@@ -236,13 +230,11 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
         try:
             with open('email.txt', 'r') as email:
                 zina = email.read()
-
                 msg = EmailMessage()
                 msg['Subject'] = 'Atrastas jaunas IP adreses!'
                 msg['From'] = send_from
                 msg['To'] = send_to
                 msg.set_content(zina)
-
             with smtplib.SMTP(smtp_server, 25) as smtp:
                 smtp.send_message(msg)
         except Exception:
@@ -261,12 +253,10 @@ print("\n****************************************************************")
 iDoit_data.pull()
 print('iDoit dati nokopēti tabulā iDoit_data')
 print("\n****************************************************************")
-
 Email_sender.select_data()
 Email_sender.send_mail()
 print('e-pasts nosūtīts')
 print("\n****************************************************************")
-
 Converter.nmap_rfile_rename('nmap_scan_result.xml') # izsauc metodi, kas apstrada nmap skana rezultatus
 print("")
 print('Skanēšana pabeigta!')

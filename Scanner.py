@@ -5,6 +5,7 @@ import os
 from lxml import etree
 import smtplib
 from email.message import EmailMessage
+import shutil
 
 skaneris_db_user = os.environ.get('SKANERIS_DB_USER')
 skaneris_db_pwd = os.environ.get('SKANERIS_DB_PWD')
@@ -18,6 +19,10 @@ MyDB = mysql.connector.connect(host='localhost', user=skaneris_db_user, passwd=s
 iDoitDB = mysql.connector.connect(host='192.168.88.203', user=iDoit_db_user, passwd=iDoit_db_pwd, database='iDoit_data')
 # pieslēgšanās iDoit mysql DB
 logtime = datetime.now().strftime('%Y.%m.%d_%H:%M:%S ')  # Laika formāts rakstīšanai logfailā
+
+scanlog = open("scan_log.txt", "a") # Atver skana loga failu
+scanlog.write(logtime + "Skans uzsākts\n")
+print('Skanēšana uzsākta')
 
 class Scanner:  # Veic skanesanas darbibu
 
@@ -81,17 +86,18 @@ class Converter: # parveido skana rezultatu par lietojamu
         def nmap_rfile_rename(vecais_fails):  # nomaina faila nosaukumu, atlasa datus, ko nepieciesams apstradat
             # Ierakstit loga procesa sakumu
             print("")
-            print("Sākta nmap skana apstrāde")
+            print("Nmap faila pārsaukšana")
             print("")
-            datums = datetime.now().strftime('%Y%m%d')
+            datums = datetime.now().strftime('%Y_%m_%d_%H:%M:%S')
             jaunais_fails = datums + '_' + vecais_fails
+            old_path = r"/home/jb/PycharmProjects/scanner/" + jaunais_fails
+            new_path = r"/home/jb/PycharmProjects/scanner/skani/" + jaunais_fails
             try:
                 os.rename(vecais_fails, jaunais_fails)
-
+                shutil.move(old_path, new_path)
             except Exception:
                 print('Error: Netika atrasts nmap_scan_result.xml fails')
                 scanlog.write(logtime + "Error: Netika atrasts nmap_scan_result.xml fails\n")  # Ieraksta loga error msg
-            print('Beigta nmap skana apstrāde')
 
 class Parser:  # Atlasa IP, portus un hostname no nmap skana rezultata un ieraksta DB
 
@@ -150,6 +156,8 @@ class Parser:  # Atlasa IP, portus un hostname no nmap skana rezultata un ieraks
         except Exception:
             print('Error: Nevar veikt nmap skana parsesanu')
             scanlog.write(logtime + "Error: Nevar veikt nmap skana parsēšanu\n")  # Ieraksta loga error msg
+        print('Dati ierakstīti scandb')
+        print("\n****************************************************************")
 
 class iDoit_data: # Atvelk datus no uzskaites sistemas
 
@@ -167,6 +175,8 @@ class iDoit_data: # Atvelk datus no uzskaites sistemas
         except Exception:
             print('Nevar nokopēt datus no iDoit DB')
             scanlog.write(logtime + "Error: Nevar nokopēt datus no iDoit DB\n")  # Ieraksta loga error msg
+        print('iDoit dati nokopēti tabulā iDoit_data')
+        print("\n****************************************************************")
 
 class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
 
@@ -240,26 +250,21 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
         except Exception:
             print('Error: Nevar nosūtīt e-pastu')
             scanlog.write(logtime + "Error: Nevar nosūtīt e-pastu\n")  # Ieraksta loga error msg
+        print('e-pasts nosūtīts')
+        print("\n****************************************************************")
 
-scanlog = open("scan_log.txt", "a") # Atver skana loga failu
-scanlog.write(logtime + "Skans uzsākts\n")
-print('Skanēšana uzsākta')
 Scanner.masscan() # izsauc masscan metodi
 Converter.masscan_result_converter() # izsauc metodi,kas konverte masscan rezultatu uz nmap skana IP sarakstu
 Scanner.nmap() # izsauc nmap metodi
 Parser.parse_nmap('nmap_scan_result.xml')
-print('Dati ierakstīti scandb')
-print("\n****************************************************************")
 iDoit_data.pull()
-print('iDoit dati nokopēti tabulā iDoit_data')
-print("\n****************************************************************")
 Email_sender.select_data()
 Email_sender.send_mail()
-print('e-pasts nosūtīts')
-print("\n****************************************************************")
 Converter.nmap_rfile_rename('nmap_scan_result.xml') # izsauc metodi, kas apstrada nmap skana rezultatus
+
 print("")
 print('Skanēšana pabeigta!')
 scanlog.write(logtime + "Skans pabeigts\n")  # Ieraksta loga procesa beigas
+
 MyDB.close()  # Aizver DB
 scanlog.close()  # Aizver skana loga failu

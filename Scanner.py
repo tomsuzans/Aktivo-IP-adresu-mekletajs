@@ -6,7 +6,7 @@ from lxml import etree
 import smtplib
 from email.message import EmailMessage
 import shutil
-#test
+
 skaneris_db_user = os.environ.get('SKANERIS_DB_USER')
 skaneris_db_pwd = os.environ.get('SKANERIS_DB_PWD')
 iDoit_db_user = os.environ.get('IDOIT_DB_USER')

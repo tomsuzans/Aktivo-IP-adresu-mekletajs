@@ -46,7 +46,7 @@ class Scanner:  # Veic skanesanas darbibu
         print("Uzsāk masscan skanu")
         print("")
         try:
-            os.system("/usr/bin/sudo /usr/bin/masscan -iL scanner_ip_range.txt --open --rate 100000 -p1-65535 "
+            os.system("/usr/bin/sudo /usr/bin/masscan -iL scanner_ip_range.txt --open-only --rate 100000 -p1-65535 "
                       "| awk '{print $6}' > masscan_result_og.txt")
             # izpilda masscan komandu terminali, saglaba tikai atrastās IP adreses
         except Exception:

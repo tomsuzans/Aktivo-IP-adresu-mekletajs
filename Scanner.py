@@ -18,30 +18,33 @@ MyDB = mysql.connector.connect(host='localhost', user=skaneris_db_user, passwd=s
 # pieslēgšanās skaneris mysql DB
 iDoitDB = mysql.connector.connect(host='192.168.88.203', user=iDoit_db_user, passwd=iDoit_db_pwd, database='iDoit_data')
 # pieslēgšanās iDoit mysql DB
-logtime = datetime.now().strftime('%Y.%m.%d_%H:%M:%S ')  # Laika formāts rakstīšanai logfailā
 
 scanlog = open("scan_log.txt", "a") # Atver skana loga failu
-scanlog.write(logtime + "Skans uzsākts\n")
+scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Skans uzsākts\n")
+scanlog.flush()
 print('Skanēšana uzsākta')
 
 class Scanner:  # Veic skanesanas darbibu
 
     def nmap():  # metode nmap skana veiksanai
-        scanlog.write(logtime + "Uzsāk Nmap skanu\n")  # Ierakstia loga procesa sakumu
+        scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Uzsāk Nmap skanu\n")  # Ierakstia loga procesa sakumu
+        scanlog.flush()
         print("\nUzsāk nmap skanu\n")
         try:
             os.system("/usr/bin/sudo /usr/bin/nmap -sS n --max-retries 1 -Pn -p1-65535 --open --discovery-ignore-rst "
                   "--max-rtt-timeout 60ms --initial-rtt-timeout 10ms -iL ip_to_scan.txt -oX nmap_scan_result.xml")
                 # izpilda nmap komandu terminali
         except Exception:
-            scanlog.write(logtime + "Error: Nevar veikt nmap skanu\n")  # Ieraksta loga error msg
+            scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Nevar veikt nmap skanu\n")  # Ieraksta loga error msg
+            scanlog.flush()
             print('Error: Nevar veikt nmap skanu')
         print("")
         print("Nmap skans beidzies")
         print("\n****************************************************************")
 
     def masscan():  # metode masscan skana veiksanai
-        scanlog.write(logtime + "Uzsāk Nmap skanu\n")  # Ierakstit loga procesa sakumu
+        scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Uzsāk masscan skanu\n")  # Ierakstit loga procesa sakumu
+        scanlog.flush()
         print("")
         print("Uzsāk masscan skanu")
         print("")
@@ -51,7 +54,8 @@ class Scanner:  # Veic skanesanas darbibu
             # izpilda masscan komandu terminali, saglaba tikai atrastās IP adreses
         except Exception:
             print('Error: Nevar veikt masscan skanu')
-            scanlog.write(logtime + "Error: Nevar veikt masscanp skanu\n")  # Ieraksta loga error msg
+            scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Nevar veikt masscanp skanu\n")  # Ieraksta loga error msg
+            scanlog.flush()
         print("")
         print("Masscan skans beidzies")
         print("\n****************************************************************")
@@ -78,7 +82,8 @@ class Converter: # parveido skana rezultatu par lietojamu
                 scan_result.close()  # aizver failu
             except Exception:
                 print('Error: Netika apstradats masscan skana fails')
-                scanlog.write(logtime + "Error: Netika apstradats masscan skana fails\n")  # Ieraksta loga error msg
+                scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Netika apstradats masscan skana fails\n")  # Ieraksta loga error msg
+                scanlog.flush()
             print("")
             print("Beigta masscan rezultātu apstrāde")
             print("\n****************************************************************")
@@ -97,12 +102,14 @@ class Converter: # parveido skana rezultatu par lietojamu
                 shutil.move(old_path, new_path)
             except Exception:
                 print('Error: Netika atrasts nmap_scan_result.xml fails')
-                scanlog.write(logtime + "Error: Netika atrasts nmap_scan_result.xml fails\n")  # Ieraksta loga error msg
+                scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Netika atrasts nmap_scan_result.xml fails\n")  # Ieraksta loga error msg
+                scanlog.flush()
 
 class Parser:  # Atlasa IP, portus un hostname no nmap skana rezultata un ieraksta DB
 
     def parse_nmap(file_name):
-        scanlog.write(logtime + "Uzsākta nmap rezultāta konvertēšana\n")
+        scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Uzsākta nmap rezultāta konvertēšana\n")
+        scanlog.flush()
         print('Uzsākta nmap rezultāta konvertēšana')
         print("\n****************************************************************")
         try:
@@ -128,7 +135,8 @@ class Parser:  # Atlasa IP, portus un hostname no nmap skana rezultata un ieraks
                             host['ports'] = ports
                     hosts.append(host)
             try:
-                scanlog.write(logtime + 'Uzsakta datu erakstīšana scandbB\n')
+                scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + 'Uzsakta datu erakstīšana scandbB\n')
+                scanlog.flush()
                 print('Uzsākta datu ierakstīšana scandbB')
                 MySQL_search_query = """SELECT ip FROM skaneris.scandb """
                 MySQL_record_insert = """INSERT INTO skaneris.scandb (ip, hostname, ports, first_seen) VALUES (%s, %s, %s, curdate()) """
@@ -152,10 +160,12 @@ class Parser:  # Atlasa IP, portus un hostname no nmap skana rezultata un ieraks
                         MyDB.commit()
             except Exception:
                 print('Error: Nevar datus ierakstīt scandb')
-                scanlog.write(logtime + 'Error: Nevar datus ierakstīt scandb\n')
+                scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + 'Error: Nevar datus ierakstīt scandb\n')
+                scanlog.flush()
         except Exception:
             print('Error: Nevar veikt nmap skana parsesanu')
-            scanlog.write(logtime + "Error: Nevar veikt nmap skana parsēšanu\n")  # Ieraksta loga error msg
+            scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Nevar veikt nmap skana parsēšanu\n")  # Ieraksta loga error msg
+            scanlog.flush()
         print('Dati ierakstīti scandb')
         print("\n****************************************************************")
 
@@ -163,7 +173,8 @@ class iDoit_data: # Atvelk datus no uzskaites sistemas
 
     def pull():
         try:
-            scanlog.write(logtime + "Atvelk datus no iDoit DB\n")  # Ierakstit loga procesa sakumu
+            scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Atvelk datus no iDoit DB\n")  # Ierakstit loga procesa sakumu
+            scanlog.flush()
             print('Atvelk datus no iDoit DB')
             MySQL_pull_from_iDoit = """INSERT INTO skaneris.iDoit_data (ip, name, lietojums) SELECT ip, hostname, bl FROM iDoit_data.iDoit_for_scan """
             MySQL_clear_data = """DELETE FROM skaneris.iDoit_data  """
@@ -174,14 +185,16 @@ class iDoit_data: # Atvelk datus no uzskaites sistemas
             iDoitDB.commit()
         except Exception:
             print('Nevar nokopēt datus no iDoit DB')
-            scanlog.write(logtime + "Error: Nevar nokopēt datus no iDoit DB\n")  # Ieraksta loga error msg
+            scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Nevar nokopēt datus no iDoit DB\n")  # Ieraksta loga error msg
+            scanlog.flush()
         print('iDoit dati nokopēti tabulā iDoit_data')
         print("\n****************************************************************")
 
 class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
 
     def select_data():
-        scanlog.write(logtime + 'Uzsākta e-pasta sagatavošana\n')
+        scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + 'Uzsākta e-pasta sagatavošana\n')
+        scanlog.flush()
         print('Uzsākta epasta sagatavošana')
         print("\n****************************************************************")
         MySQL_select_ip_to_send = """SELECT ip from skaneris.scandb WHERE scandb.first_seen = curdate() """
@@ -232,10 +245,12 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
             email.close()
         except Exception:
             print('Error: Nevar sagatavot e-pastu')
-            scanlog.write(logtime + "Error: Nevar sagatavot e-pastu\n")  # Ieraksta loga error msg
+            scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Nevar sagatavot e-pastu\n")  # Ieraksta loga error msg
+            scanlog.flush()
 
     def send_mail():
-        scanlog.write(logtime + 'Uzsākta e-pasta sūtīšana\n')
+        scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + 'Uzsākta e-pasta sūtīšana\n')
+        scanlog.flush()
         print('Uzsākta epasta sūtīšana')
         try:
             with open('email.txt', 'r') as email:
@@ -249,7 +264,8 @@ class Email_sender:  # Nosūta epastu ar jaunatklātajām IP adresēm
                 smtp.send_message(msg)
         except Exception:
             print('Error: Nevar nosūtīt e-pastu')
-            scanlog.write(logtime + "Error: Nevar nosūtīt e-pastu\n")  # Ieraksta loga error msg
+            scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Error: Nevar nosūtīt e-pastu\n")  # Ieraksta loga error msg
+            scanlog.flush()
         print('e-pasts nosūtīts')
         print("\n****************************************************************")
 
@@ -264,7 +280,7 @@ Converter.nmap_rfile_rename('nmap_scan_result.xml') # izsauc metodi, kas apstrad
 
 print("")
 print('Skanēšana pabeigta!')
-scanlog.write(logtime + "Skans pabeigts\n")  # Ieraksta loga procesa beigas
+scanlog.write(datetime.now().strftime('%Y.%m.%d_%H:%M:%S ') + "Skans pabeigts\n")  # Ieraksta loga procesa beigas
 
 MyDB.close()  # Aizver DB
 scanlog.close()  # Aizver skana loga failu
